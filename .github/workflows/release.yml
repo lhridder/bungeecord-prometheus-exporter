@@ -1,13 +1,12 @@
 # This workflow will build a Java project with Maven
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: Java CI with Maven
+name: Release
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
+  release:
+    types: [ created ]
 
 jobs:
   build:
@@ -15,15 +14,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up JDK 11
-      uses: actions/setup-java@v2
-      with:
-        java-version: '11'
-        distribution: 'adopt'
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
-    - name: Publish package
-      run: mvn --batch-mode deploy
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+      - name: Release
+        uses: qcastel/github-actions-maven-release@v1.12.24
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-11-openjdk/
+        with:
+          access-token: ${{ secrets.GITHUB_ACCESS_TOKEN }}
+          release-branch-name: "main"
+          maven-options: "-DignoreSnapshots=true"
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          maven-repo-server-id: github
+          maven-repo-server-username: ${{ secrets.MVN_REPO_PRIVATE_REPO_USER }}
+          maven-repo-server-password: ${{ secrets.MVN_REPO_PRIVATE_REPO_PASSWORD }}
+          git-release-bot-name: ${{ secrets.BOT_NAME }}
+          git-release-bot-email: ${{ secrets.BOT_EMAIL }}
